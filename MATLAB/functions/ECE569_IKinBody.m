@@ -43,28 +43,28 @@ function [thetalist, success] = ECE569_IKinBody(Blist, M, T, thetalist0, eomg, e
 %     1
 
 % ensure column vector and single initialization
-thetalist = thetalist0(:);
+
+
+thetalist = thetalist0;
 i = 0;
 maxiterations = 20;
 
-% compute initial body error (se3ToVec returns [v; omega] in your helpers)
-Tb = ECE569_FKinBody(M, Blist, thetalist);
-Vb_raw = ECE569_se3ToVec(ECE569_MatrixLog6(ECE569_TransInv(Tb) * T));
-% reorder to [omega; v] so Vb(1:3)=angular, Vb(4:6)=linear
-Vb = [Vb_raw(4:6); Vb_raw(1:3)];
+% TODO: calculate Vb
+% Hint: you will need to use four of the ECE569 functions from earlier
+Vb = ECE569_se3ToVec(ECE569_MatrixLog6(ECE569_TransInv(ECE569_FKinBody(M, Blist, thetalist)) * T));
 
-err = norm(Vb(1:3)) > eomg || norm(Vb(4:6)) > ev;
+err = norm(Vb(1: 3)) > eomg || norm(Vb(4: 6)) > ev;
 while err && i < maxiterations
-    Jb = ECE569_JacobianBody(Blist, thetalist);
-    % subtract the correction (matches your Jacobian/twist conventions)
-    thetalist = thetalist - pinv(Jb) * Vb;
-
+    % TODO: update thetalist
+    % Hint: the psuedo-inverse is given in MATLAB by pinv()
+    thetalist = thetalist + pinv(ECE569_JacobianBody(Blist, thetalist)) * Vb;
+    
     i = i + 1;
-    Tb = ECE569_FKinBody(M, Blist, thetalist);
-    Vb_raw = ECE569_se3ToVec(ECE569_MatrixLog6(ECE569_TransInv(Tb) * T));
-    Vb = [Vb_raw(4:6); Vb_raw(1:3)];
-
-    err = norm(Vb(1:3)) > eomg || norm(Vb(4:6)) > ev;
+    
+    % TODO: calculate Vb (same as before)
+    Vb = ECE569_se3ToVec(ECE569_MatrixLog6(ECE569_TransInv(ECE569_FKinBody(M, Blist, thetalist)) * T));
+    
+    err = norm(Vb(1: 3)) > eomg || norm(Vb(4: 6)) > ev;
 end
-
-success = ~err;
+success = ~ err;
+end

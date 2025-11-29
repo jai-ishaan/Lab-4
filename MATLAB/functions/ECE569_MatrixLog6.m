@@ -21,12 +21,9 @@ omgmat = ECE569_MatrixLog3(R);
 if isequal(omgmat, zeros(3))
     expmat = [zeros(3), p; 0, 0, 0, 0];
 else
-    theta = acos((trace(R)-1)/2);
-    omgmat_unnorm = omgmat / theta;
-    a = theta / 2;
-    b = (1 - cos(theta)) / theta;
-    c = (theta - sin(theta)) / theta;
-    G_inv = eye(3) * a + omgmat_unnorm * b + omgmat_unnorm * omgmat_unnorm * c;
+    theta = acos((trace(R) - 1) / 2);
+    omgmat_normalized = omgmat / theta;
+    G_inv = eye(3)/theta - omgmat_normalized/2 + (1/theta - 1/(2*tan(theta/2))) * (omgmat_normalized * omgmat_normalized);
     G_inv = G_inv * theta;
     v = G_inv * p;
     expmat = [omgmat, v; 0, 0, 0, 0];
