@@ -24,10 +24,14 @@ function Jb = ECE569_JacobianBody(Blist, thetalist)
 %   -1.4432    2.9456    1.4331    0.3000
 %   -2.0664    1.8288   -1.5887    0.4000
 
-Jb = Blist;
+n = size(Blist,2);
+Jb = zeros(6,n);
+Jb(:,n) = Blist(:,n);
 T = eye(4);
-for i = length(thetalist) - 1: -1: 1   
-    % T = T * ...
-	% Jb(:, i) = ...
+for i = n-1:-1:1
+    % Build T = exp(B_{i+1}*theta_{i+1}) * ... * exp(B_n*theta_n)
+    T = ECE569_MatrixExp6(ECE569_VecTose3(Blist(:,i+1)*thetalist(i+1))) * T;
+    % Use adjoint of the inverse transform for the body Jacobian
+    Jb(:,i) = ECE569_Adjoint(ECE569_TransInv(T)) * Blist(:,i);
 end
 end

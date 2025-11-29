@@ -17,5 +17,7 @@ function V = ECE569_se3ToVec(se3mat)
 %     5
 %     6
 
-% V = ... TODO
+omg = ECE569_so3ToVec(se3mat(1:3, 1:3));
+v = se3mat(1:3, 4);
+V = [omg; v];
 end

@@ -2,35 +2,36 @@
 clear all;
 close all;
 clc;
+%%
 %[text] (1a) Calculate arc length of Lissajous Curve.
 % TODO: replace T, xd, yd with your our lissajous curve
-% T = 2*pi;
-% t = linspace(0,T,1000);
-% xd = 0.16*sin(1*t);
-% yd = 0.08*sin(2*t);
+T = 2*pi;
+t = linspace(0,T,1000);
+xd = 0.16*sin(1*t);
+yd = 0.08*sin(2*t);
 
 d = 0;
 for i=1:length(t)-1
-    % d = d + ...
+    d = d + sqrt((xd(i+1) - xd(i))^2 + (yd(i+1) - yd(i))^2);
 end
 %[text] Determine the average speed, $c$, of end effector over `tfinal` seconds.
 % TODO: replace tfinal with your code
-% tfinal = 5;
+tfinal = 5;
 
 % calculate average speed
 c = d/tfinal;
 %[text] Use forward-euler method to numerically approximate $\\alpha(t)$
 % normalized trapezoidal curve
 g = @(t, T, ta) (T/(T-ta))*((t < ta) .* (t / ta) + (t >= ta & t <= (T - ta)) .* 1 + (t > (T - ta)) .* ((T - t) / ta));
-
+ta = 0.1*tfinal;
 dt = 0.002;
 t = 0:dt:tfinal;
 alpha = zeros(size(t));
 for i=1:length(t)-1
-    % xdot = ...
-    % ydot = ...
+    xdot = 0.16*1*cos(1*alpha(i));
+    ydot = 0.08*2*cos(2*alpha(i));
     % equation (7) in the lab assignment
-    % alpha(i+1) = alpha(i) + ...
+    alpha(i+1) = alpha(i) + c*g(t(i),tfinal,ta)/sqrt(xdot^2 + ydot^2)*dt;
 end
 
 plot(t,alpha,'LineWidth',2); title('Plot of \alpha(t)');
@@ -39,8 +40,8 @@ yline(T,'k--','LineWidth',2);
 legend('\alpha','T (period)','Location','southeast')
 %[text] (1c) Combine all trajectories together.
 % TODO: replace with your own lissajous curve
-% x = 0.16*sin(alpha);
-% y = 0.08*sin(2*alpha);
+x = 0.16*sin(alpha);
+y = 0.08*sin(2*alpha);
 %[text] Plot the speed of the trajectory as function of time.
 v = sqrt( (diff(x)/dt).^2 + (diff(y)/dt).^2 );
 plot(dt:dt:tfinal,v,'LineWidth',3); hold on;
@@ -105,7 +106,10 @@ T0 = T0_body;
 N = length(t);
 Tsd = zeros(4,4,N);
 for i=1:N
-    % Tsd(:,:,i) = ...
+    Rd = eye(3);
+    pd = [x(i); y(i); 0];
+    Td = [Rd, pd; 0, 0, 0, 1];
+    Tsd(:,:,i) = T0 * Td;
 end
 %%
 %[text] (2d) Plot (x,y,z) in the s frame
@@ -131,7 +135,6 @@ Td = T0;
 % you need to implement IKinBody
 [thetaSol, success] = ECE569_IKinBody(B,M,Td,theta0,1e-6,1e-6);
 if (~success)
-    close(f);
     error('Error. \nCould not perform IK at index %d.',1)
 end
 %%
@@ -145,11 +148,11 @@ thetaAll(:,1) = theta0;
 f = waitbar(0,['Inverse Kinematics (1/',num2str(N),') complete.']);
 
 for i=2:N
-    % TODO: use previous solution as current guess
-    % initialguess = ...
-
-    % TODO: calculate thetaSol for Tsd(:,:,i) with initial guess
-    % [thetaSol, success] = ...
+    % use previous solution as current guess
+    initialguess = thetaAll(:,i-1);
+    
+    % calculate thetaSol for Tsd(:,:,i) with initial guess
+    [thetaSol, success] = ECE569_IKinBody(B,M,Tsd(:,:,i),initialguess,1e-6,1e-6);
     if (~success)
         close(f);
         error('Error. \nCould not perform IK at index %d.',i)
@@ -170,9 +173,10 @@ ylabel('first order difference')
 %%
 %[text] (3d) Verify that the joints we found actually trace out our trajectory (forward kinematics)
 actualTsd = zeros(4,4,N);
+actualTsd = zeros(4,4,N);
 for i=1:N
-    % TODO: use forward kinematics to calculate Tsd from our thetaAll
-    % actualTsd(:,:,i) = ... 
+    % use forward kinematics to calculate Tsd from our thetaAll
+    actualTsd(:,:,i) = ECE569_FKinBody(M,B,thetaAll(:,i));
 end
 
 xs = actualTsd(1,4,:);
@@ -193,7 +197,8 @@ hold off
 %[text] (3e) Verify that the end effector does not enter a kinematic singularity, by plotting the determinant of your body jacobian
 body_dets = zeros(N,1);
 for i=1:N
-    body_dets(i) = det(...);
+    Jb = ECE569_JacobianBody(B,thetaAll(:,i));
+    body_dets(i) = det(Jb);
 end
 plot(t, body_dets)
 title('Manipulability')
@@ -214,5 +219,5 @@ data = [t' thetaAll' led];
 %[appendix]{"version":"1.0"}
 %---
 %[metadata:view]
-%   data: {"layout":"onright","rightPanelPercent":47.9}
+%   data: {"layout":"onright","rightPanelPercent":43}
 %---
